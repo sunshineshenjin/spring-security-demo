@@ -1,0 +1,47 @@
+server:
+  port: 8080
+
+logging:
+  level:
+    root: info
+    org.springframework.web: trace
+    org.springframework.security: trace
+    org.springframework.security.oauth2: trace
+    org.springframework.boot.autoconfigure: trace
+# 下面定义了三个client, 分别是messaging-client-oidc，messaging-client-authorization-code， messaging-client-client-credentials
+# 都是用名为spring的provider 作为认证服务
+spring:
+  thymeleaf:
+    cache: false
+  security:
+    oauth2:
+      client:
+        registration:
+          messaging-client-authorization-code:
+            provider: spring
+            client-id: message-clienta
+            client-secret: secret
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://127.0.0.1:8080/login/oauth2/code/message-clienta"
+            scope: message.read,message.write,openid
+            client-name: messaging-client-authorization-code
+          messaging-client-client-credentials:
+            provider: spring
+            client-id: message-clientb
+            client-secret: secret
+            authorization-grant-type: client_credentials
+            scope: message.read,message.write
+            client-name: messaging-client-client-credentials
+        provider:
+          spring:
+            issuer-uri: http://localhost:9999
+            token-url: http://localhost:9999/oauth2/token
+  datasource:
+    url: jdbc:mysql://localhost/spring-client
+    username: root
+    password: sj1234567
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+messages:
+  base-uri: http://127.0.0.1:8090/messages
+
