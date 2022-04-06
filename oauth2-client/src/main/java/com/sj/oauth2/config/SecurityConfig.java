@@ -1,15 +1,24 @@
 package com.sj.oauth2.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.oauth2.client.JdbcOAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @EnableWebSecurity
 public class SecurityConfig {
+
+    @Autowired
+    private OAuth2AuthorizedClientService jdbcAuthorizedClientService;
+
     @Bean
     WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring().antMatchers("/webjars/**");
@@ -35,7 +44,21 @@ public class SecurityConfig {
                 )
                 .oauth2Login(oauth2Login ->
                         oauth2Login.loginPage("/oauth2/authorization/messaging-client-authorization-code"))
-                .oauth2Client(withDefaults());
+                .oauth2Client(httpSecurity -> {
+                    httpSecurity.authorizedClientService(this.jdbcAuthorizedClientService);
+                });
         return http.build();
+    }
+
+    /**
+     * 使用数据库保存已经授权的请求，防止客户端重启后内存中的客户端授权信息丢失
+     * 该jdbc 使用的表为oauth2_authorized_client, 该表为客户端专用
+     * @param jdbcTemplate
+     * @param clientRegistrationRepository
+     * @return
+     */
+    @Bean
+    OAuth2AuthorizedClientService jdbcAuthorizedClientService(JdbcTemplate jdbcTemplate, ClientRegistrationRepository clientRegistrationRepository) {
+        return new JdbcOAuth2AuthorizedClientService(jdbcTemplate, clientRegistrationRepository);
     }
 }

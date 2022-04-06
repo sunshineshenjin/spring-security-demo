@@ -37,10 +37,12 @@ spring:
             issuer-uri: http://localhost:9999
             token-url: http://localhost:9999/oauth2/token
   datasource:
-    url: jdbc:mysql://localhost/spring-client
+    url: jdbc:mysql://localhost/spring-oauth
     username: root
     password: sj1234567
     driver-class-name: com.mysql.cj.jdbc.Driver
+  main:
+    allow-circular-references: true
 
 messages:
   base-uri: http://127.0.0.1:8090/messages

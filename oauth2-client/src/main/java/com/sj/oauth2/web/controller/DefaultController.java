@@ -15,10 +15,17 @@
  */
 package com.sj.oauth2.web.controller;
 
+import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.client.web.AuthenticatedPrincipalOAuth2AuthorizedClientRepository;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.web.context.SecurityContextRepository;
@@ -38,6 +45,9 @@ public class DefaultController {
 
 	private SecurityContextRepository securityContextRepository;
 
+	@Autowired
+	private OAuth2AuthorizedClientService oAuth2AuthorizedClientService;
+
 	@GetMapping("/")
 	public String root(HttpServletRequest request, HttpServletResponse response) {
 		return "sdksdsdka";
@@ -46,12 +56,19 @@ public class DefaultController {
 	@GetMapping("/index")
 	public String index(HttpServletRequest request, HttpServletResponse response) {
 		SecurityContext context = SecurityContextHolder.getContext();
+		JSONObject jsonObject = new JSONObject();
 		if (!Objects.isNull(context)) {
 			log.info("获取到context");
-			Authentication authentication = context.getAuthentication();
+			OAuth2AuthenticationToken authentication = (OAuth2AuthenticationToken) context.getAuthentication();
 			DefaultOidcUser oidcUser = (DefaultOidcUser) authentication.getPrincipal();
-			return oidcUser.toString();
+			OAuth2AuthorizedClient oAuth2AuthorizedClient  = oAuth2AuthorizedClientService.loadAuthorizedClient(authentication.getAuthorizedClientRegistrationId(), authentication.getName());
+			if (!Objects.isNull(oAuth2AuthorizedClient)) {
+				jsonObject.put("accessToken", oAuth2AuthorizedClient.getAccessToken());
+				jsonObject.put("refreshToken", oAuth2AuthorizedClient.getRefreshToken());
+			}
+			jsonObject.put("oidcUser", oidcUser);
+			return jsonObject.toJSONString();
 		}
-		return "sdkskdkb";
+		return jsonObject.toJSONString();
 	}
 }
